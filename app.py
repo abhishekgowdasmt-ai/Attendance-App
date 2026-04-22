@@ -224,32 +224,52 @@ def location_block():
     return loc
 
 def employee_dashboard():
-    user = st.session_state.user
+    current_user = st.session_state.get("user")
+
+    if not current_user:
+        st.error("Please login again")
+        st.stop()
+
+    if not isinstance(current_user, dict):
+        st.error("User session is invalid. Please login again.")
+        st.stop()
+
+    user_id = str(current_user.get("id", "")).strip()
+    user_name = str(current_user.get("name", "")).strip()
+
     brand_header()
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="section-title">Welcome, {user["name"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">Welcome, {user_name}</div>', unsafe_allow_html=True)
 
     remarks = st.text_input("Remarks (optional)")
-loc = location_block()
+    loc = location_block()
 
-c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
 
-with c1:
-    if st.button("Check In", use_container_width=True):
-        msg = mark_checkin(user["id"], user["name"], location=loc, remarks=remarks)
-        if msg == "Checked in":
-            st.success(msg)
-        else:
-            st.warning(msg)
+    with c1:
+        if st.button("Check In", use_container_width=True):
+            msg = mark_checkin(user_id, user_name, location=loc, remarks=remarks)
+            if msg == "Checked in":
+                st.success(msg)
+            else:
+                st.warning(msg)
 
-with c2:
-    if st.button("Check Out", use_container_width=True):
-        msg = mark_checkout(user["id"], location=loc)
-        if msg == "Checked out":
-            st.success(msg)
-        else:
-            st.warning(msg)
+    with c2:
+        if st.button("Check Out", use_container_width=True):
+            msg = mark_checkout(user_id, location=loc)
+            if msg == "Checked out":
+                st.success(msg)
+            else:
+                st.warning(msg)
+
+    with c3:
+        if st.button("Mark Absent", use_container_width=True):
+            msg = mark_absent(user_id, user_name, remarks=remarks)
+            if msg == "Marked absent":
+                st.success(msg)
+            else:
+                st.warning(msg)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -257,15 +277,15 @@ with c2:
     st.markdown('<div class="section-title">My Attendance</div>', unsafe_allow_html=True)
 
     df = get_attendance()
-    if not df.empty:
-        my_df = df[df["employee_id"].astype(str) == str(st.session_state["user"]["id"])].copy()
+    if not df.empty and "employee_id" in df.columns:
+        my_df = df[df["employee_id"].astype(str).str.strip() == user_id].copy()
         st.dataframe(my_df, use_container_width=True, hide_index=True)
 
         csv = my_df.to_csv(index=False).encode("utf-8")
         st.download_button(
             "Download My Attendance",
             data=csv,
-            file_name=f"{user['id']}_attendance.csv",
+            file_name=f"{user_id}_attendance.csv",
             mime="text/csv",
             use_container_width=True
         )

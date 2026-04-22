@@ -33,13 +33,12 @@ def get_employees():
 def get_attendance():
     ws = sheet("attendance")
     values = ws.get_all_values()
-    if not values or len(values) < 1:
+    if not values:
         return pd.DataFrame()
 
     headers = [str(h).strip().lower() for h in values[0]]
     rows = values[1:]
 
-    # pad short rows so dataframe never breaks
     padded_rows = []
     for row in rows:
         row = list(row)
@@ -68,13 +67,11 @@ def mark_checkin(emp_id, name, location=None, remarks=""):
 
     if not df.empty:
         existing = df[
-            (df["employee_id"].astype(str) == str(emp_id)) &
-            (df["date"].astype(str) == today)
+            (df["employee_id"].astype(str).str.strip() == str(emp_id)) &
+            (df["date"].astype(str).str.strip() == today)
         ]
         if not existing.empty:
-            return "Already checked in"
-
-    next_id = len(df) + 1 if not df.empty else 1
+            return "Attendance already marked for today"
 
     lat = ""
     lng = ""
@@ -87,26 +84,61 @@ def mark_checkin(emp_id, name, location=None, remarks=""):
         acc = location.get("accuracy", "") or ""
         map_url = _map_url(lat, lng)
 
+    next_id = len(df) + 1 if not df.empty else 1
+
     ws.append_row([
-        next_id,
-        emp_id,
-        name,
-        today,
-        now_time,
-        "",
-        remarks,
-        lat,
-        lng,
-        acc,
-        map_url,
-        "",
-        "",
-        "",
-        ""
+        next_id,         # id
+        emp_id,          # employee_id
+        name,            # name
+        today,           # date
+        "Present",       # status
+        now_time,        # check_in
+        "",              # check_out
+        remarks,         # remarks
+        lat,             # checkin_lat
+        lng,             # checkin_lng
+        acc,             # checkin_accuracy
+        map_url,         # checkin_map
+        "",              # checkout_lat
+        "",              # checkout_lng
+        "",              # checkout_accuracy
+        ""               # checkout_map
     ])
 
     clear_cached_data()
     return "Checked in"
+
+def mark_absent(emp_id, name, remarks=""):
+    ws = sheet("attendance")
+    df = get_attendance()
+
+    today = pd.Timestamp.now().strftime("%Y-%m-%d")
+
+    if not df.empty:
+        existing = df[
+            (df["employee_id"].astype(str).str.strip() == str(emp_id)) &
+            (df["date"].astype(str).str.strip() == today)
+        ]
+        if not existing.empty:
+            return "Attendance already marked for today"
+
+    next_id = len(df) + 1 if not df.empty else 1
+
+    ws.append_row([
+        next_id,         # id
+        emp_id,          # employee_id
+        name,            # name
+        today,           # date
+        "Absent",        # status
+        "",              # check_in
+        "",              # check_out
+        remarks,         # remarks
+        "", "", "", "",  # checkin location fields
+        "", "", "", ""   # checkout location fields
+    ])
+
+    clear_cached_data()
+    return "Marked absent"
 
 def mark_checkout(emp_id, location=None):
     ws = sheet("attendance")
@@ -139,9 +171,12 @@ def mark_checkout(emp_id, location=None):
 
         row_emp_id = str(row[col["employee_id"] - 1]).strip()
         row_date = str(row[col["date"] - 1]).strip()
+        row_status = str(row[col["status"] - 1]).strip()
         row_checkout = str(row[col["check_out"] - 1]).strip()
 
         if row_emp_id == str(emp_id) and row_date == today:
+            if row_status == "Absent":
+                return "You are marked absent for today"
             if row_checkout:
                 return "Already checked out"
 
