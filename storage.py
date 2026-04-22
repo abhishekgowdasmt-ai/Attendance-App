@@ -8,8 +8,9 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-SPREADSHEET_NAME = "attendance_db"
+SPREADSHEET_ID = "PASTE_YOUR_GOOGLE_SHEET_ID_HERE"
 
+@st.cache_resource
 def client():
     creds = Credentials.from_service_account_info(
         dict(st.secrets["gcp_service_account"]),
@@ -18,8 +19,9 @@ def client():
     return gspread.authorize(creds)
 
 def sheet(name):
-    return client().open(SPREADSHEET_NAME).worksheet(name)
+    return client().open_by_key(SPREADSHEET_ID).worksheet(name)
 
+@st.cache_data(ttl=10)
 def get_employees():
     ws = sheet("employees")
     df = pd.DataFrame(ws.get_all_records())
@@ -27,12 +29,17 @@ def get_employees():
         df.columns = [str(c).strip().lower() for c in df.columns]
     return df
 
+@st.cache_data(ttl=10)
 def get_attendance():
     ws = sheet("attendance")
     df = pd.DataFrame(ws.get_all_records())
     if not df.empty:
         df.columns = [str(c).strip().lower() for c in df.columns]
     return df
+
+def clear_cached_data():
+    get_employees.clear()
+    get_attendance.clear()
 
 def mark_checkin(emp_id, name):
     ws = sheet("attendance")
@@ -60,6 +67,8 @@ def mark_checkin(emp_id, name):
         "",
         ""
     ])
+
+    clear_cached_data()
     return "Checked in"
 
 def mark_checkout(emp_id):
@@ -75,6 +84,7 @@ def mark_checkout(emp_id):
                 return "Already checked out"
 
             ws.update_cell(i, 6, now_time)
+            clear_cached_data()
             return "Checked out"
 
     return "Check-in first"
