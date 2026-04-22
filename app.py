@@ -1,6 +1,8 @@
 import os
+import json
 import streamlit as st
 import pandas as pd
+import extra_streamlit_components as stx
 from streamlit_geolocation import streamlit_geolocation
 
 from auth import authenticate
@@ -19,17 +21,54 @@ TEXT = "#1F2937"
 MUTED = "#6B7280"
 BORDER = "#E5E7EB"
 
+COOKIE_NAME = "smt_user_session"
+
 st.set_page_config(
     page_title=APP_NAME,
     page_icon=LOGO_PATH if os.path.exists(LOGO_PATH) else "🚖",
     layout="wide"
 )
 
+cookie_manager = stx.CookieManager()
+
 if "user" not in st.session_state:
     st.session_state["user"] = None
 
 if "latest_location" not in st.session_state:
     st.session_state["latest_location"] = None
+
+if "admin_page" not in st.session_state:
+    st.session_state["admin_page"] = "Dashboard"
+
+
+def save_user_cookie(user_dict: dict):
+    cookie_manager.set(
+        COOKIE_NAME,
+        json.dumps(user_dict),
+        expires_at=None,
+        key="set_user_cookie"
+    )
+
+
+def load_user_cookie():
+    raw = cookie_manager.get(COOKIE_NAME)
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
+def clear_user_cookie():
+    cookie_manager.delete(COOKIE_NAME, key="delete_user_cookie")
+
+
+def restore_user_session():
+    if st.session_state.get("user") is None:
+        saved_user = load_user_cookie()
+        if saved_user and isinstance(saved_user, dict):
+            st.session_state["user"] = saved_user
 
 
 def inject_css():
@@ -182,10 +221,24 @@ def sidebar():
             </div>
             """, unsafe_allow_html=True)
 
+            role = str(current_user.get("role", "")).strip().lower()
+
+            if role == "admin":
+                st.write("")
+                st.session_state["admin_page"] = st.radio(
+                    "Navigation",
+                    ["Dashboard", "Today's Attendance", "All Attendance", "Monthly Report", "All Employees"],
+                    index=["Dashboard", "Today's Attendance", "All Attendance", "Monthly Report", "All Employees"].index(
+                        st.session_state.get("admin_page", "Dashboard")
+                    ),
+                    key="admin_nav"
+                )
+
             st.write("")
             if st.button("Logout", use_container_width=True):
                 st.session_state["user"] = None
                 st.session_state["latest_location"] = None
+                clear_user_cookie()
                 st.rerun()
 
 
@@ -200,7 +253,9 @@ def login_page():
     if st.button("Login", use_container_width=True):
         user = authenticate(username, password)
         if user:
-            st.session_state["user"] = dict(user)
+            user_dict = dict(user)
+            st.session_state["user"] = user_dict
+            save_user_cookie(user_dict)
             st.rerun()
         else:
             st.error("Invalid username or password")
@@ -227,12 +282,8 @@ def location_block():
 def employee_dashboard():
     current_user = st.session_state.get("user")
 
-    if not current_user:
+    if not current_user or not isinstance(current_user, dict):
         st.error("Please login again")
-        st.stop()
-
-    if not isinstance(current_user, dict):
-        st.error("User session is invalid. Please login again.")
         st.stop()
 
     user_id = str(current_user.get("id", "")).strip()
@@ -323,32 +374,54 @@ def admin_dashboard():
         if not today_df.empty else 0
     )
 
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        st.markdown(f'<div class="metric-card"><div class="metric-title">Total Employees</div><div class="metric-value" style="color:{PURPLE};">{total_employees}</div></div>', unsafe_allow_html=True)
-    with m2:
-        st.markdown(f'<div class="metric-card"><div class="metric-title">Present Today</div><div class="metric-value" style="color:{BLUE};">{total_present_today}</div></div>', unsafe_allow_html=True)
-    with m3:
-        st.markdown(f'<div class="metric-card"><div class="metric-title">Checked Out</div><div class="metric-value" style="color:{ORANGE};">{total_checked_out}</div></div>', unsafe_allow_html=True)
+    page = st.session_state.get("admin_page", "Dashboard")
+
+    if page == "Dashboard":
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.markdown(f'<div class="metric-card"><div class="metric-title">Total Employees</div><div class="metric-value" style="color:{PURPLE};">{total_employees}</div></div>', unsafe_allow_html=True)
+        with m2:
+            st.markdown(f'<div class="metric-card"><div class="metric-title">Present Today</div><div class="metric-value" style="color:{BLUE};">{total_present_today}</div></div>', unsafe_allow_html=True)
+        with m3:
+            st.markdown(f'<div class="metric-card"><div class="metric-title">Checked Out</div><div class="metric-value" style="color:{ORANGE};">{total_checked_out}</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="section-title">Admin Dashboard - {current_user.get("name", "")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{page}</div>', unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Today's Attendance", "All Employees", "Monthly Report"])
-
-    with tab1:
+    if page == "Dashboard":
         if not today_df.empty:
             st.dataframe(today_df, use_container_width=True, hide_index=True)
         else:
             st.info("No attendance records yet.")
 
-    with tab2:
-        if not emp_df.empty:
-            st.dataframe(emp_df, use_container_width=True, hide_index=True)
+    elif page == "Today's Attendance":
+        if not today_df.empty:
+            st.dataframe(today_df, use_container_width=True, hide_index=True)
+            csv = today_df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "Download Today's Attendance CSV",
+                data=csv,
+                file_name=f"attendance_{today}.csv",
+                mime="text/csv"
+            )
         else:
-            st.info("No employees found.")
+            st.info("No attendance records yet.")
 
-    with tab3:
+    elif page == "All Attendance":
+        if not df.empty:
+            search = st.text_input("Search by employee id or name")
+            filtered_df = df.copy()
+            if search:
+                s = search.strip().lower()
+                filtered_df = filtered_df[
+                    filtered_df["employee_id"].astype(str).str.lower().str.contains(s) |
+                    filtered_df["name"].astype(str).str.lower().str.contains(s)
+                ]
+            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+        else:
+            st.info("No attendance records found.")
+
+    elif page == "Monthly Report":
         if not df.empty:
             month_options = sorted(df["date"].astype(str).str[:7].unique(), reverse=True)
             month = st.selectbox("Select Month", month_options)
@@ -365,10 +438,17 @@ def admin_dashboard():
         else:
             st.info("No attendance records yet.")
 
+    elif page == "All Employees":
+        if not emp_df.empty:
+            st.dataframe(emp_df, use_container_width=True, hide_index=True)
+        else:
+            st.info("No employees found.")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 
 inject_css()
+restore_user_session()
 
 current_user = st.session_state.get("user")
 if current_user is None:
