@@ -258,7 +258,7 @@ with c2:
 
     df = get_attendance()
     if not df.empty:
-        my_df = df[df["employee_id"].astype(str) == str(user["id"])].copy()
+        my_df = df[df["employee_id"].astype(str) == str(st.session_state["user"]["id"])].copy()
         st.dataframe(my_df, use_container_width=True, hide_index=True)
 
         csv = my_df.to_csv(index=False).encode("utf-8")
