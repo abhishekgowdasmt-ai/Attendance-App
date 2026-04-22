@@ -4,7 +4,7 @@ import pandas as pd
 from streamlit_geolocation import streamlit_geolocation
 
 from auth import authenticate
-from storage import get_employees, get_attendance, mark_checkin, mark_checkout
+from storage import get_employees, get_attendance, mark_checkin, mark_checkout, mark_absent
 
 APP_NAME = "Shree Maruthi Travels"
 TAGLINE = "On Time, Safe, Reliable"
