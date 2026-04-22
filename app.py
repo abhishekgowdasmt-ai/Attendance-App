@@ -28,6 +28,19 @@ st.set_page_config(
 if "user" not in st.session_state:
     st.session_state.user = None
 
+def location_block():
+    st.markdown("#### Current Location")
+    loc = streamlit_geolocation()
+    if loc and loc.get("latitude") is not None:
+        st.session_state["latest_location"] = loc
+        st.success("Location ready")
+        st.caption(
+            f"Lat: {loc.get('latitude')}, Lng: {loc.get('longitude')}, Accuracy: {loc.get('accuracy')}"
+        )
+    else:
+        st.info("Allow location access once. Then Check In / Check Out will save it.")
+    return st.session_state.get("latest_location")
+
 def inject_css():
     st.markdown(f"""
     <style>
@@ -217,26 +230,26 @@ def employee_dashboard():
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown(f'<div class="section-title">Welcome, {user["name"]}</div>', unsafe_allow_html=True)
 
-    remarks = st.text_input("Remarks (optional)", placeholder="Any note for today")
-    loc = location_block()
+    remarks = st.text_input("Remarks (optional)")
+loc = location_block()
 
-    c1, c2 = st.columns(2)
+c1, c2 = st.columns(2)
 
-    with c1:
-        if st.button("Check In", use_container_width=True):
-            msg = mark_checkin(user["id"], user["name"], location=loc, remarks=remarks)
-            if msg == "Checked in":
-                st.success(msg)
-            else:
-                st.warning(msg)
+with c1:
+    if st.button("Check In", use_container_width=True):
+        msg = mark_checkin(user["id"], user["name"], location=loc, remarks=remarks)
+        if msg == "Checked in":
+            st.success(msg)
+        else:
+            st.warning(msg)
 
-    with c2:
-        if st.button("Check Out", use_container_width=True):
-            msg = mark_checkout(user["id"], location=loc)
-            if msg == "Checked out":
-                st.success(msg)
-            else:
-                st.warning(msg)
+with c2:
+    if st.button("Check Out", use_container_width=True):
+        msg = mark_checkout(user["id"], location=loc)
+        if msg == "Checked out":
+            st.success(msg)
+        else:
+            st.warning(msg)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
