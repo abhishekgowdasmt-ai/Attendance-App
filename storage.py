@@ -8,8 +8,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-SPREADSHEET_ID = "PASTE_YOUR_GOOGLE_SHEET_ID_HERE"
-
+SPREADSHEET_ID = "1YHwhD_vIuvuzWl0zGP0mPUEEZoTNFYuzYN2CWBZICSI"
 @st.cache_resource
 def client():
     creds = Credentials.from_service_account_info(
