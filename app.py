@@ -6,7 +6,16 @@ from storage import get_employees, get_attendance, mark_checkin, mark_checkout
 
 APP_NAME = "Shree Maruthi Travels"
 TAGLINE = "On Time, Safe, Reliable"
-LOGO_PATH = "logo.png"
+LOGO_PATH = "logo.jpeg"
+
+ORANGE = "#F5821F"
+PURPLE = "#2E1A7D"
+BLUE = "#1697E5"
+BG = "#F6F8FC"
+CARD = "#FFFFFF"
+TEXT = "#1F2937"
+MUTED = "#6B7280"
+BORDER = "#E5E7EB"
 
 st.set_page_config(
     page_title=APP_NAME,
@@ -17,72 +26,220 @@ st.set_page_config(
 if "user" not in st.session_state:
     st.session_state.user = None
 
-def load_branding():
-    st.markdown("""
+def inject_css():
+    st.markdown(f"""
     <style>
-        .main {
-            background-color: #f7f9fc;
-        }
-        .block-container {
-            padding-top: 1.5rem;
-            padding-bottom: 2rem;
-        }
-        .brand-card {
-            background: linear-gradient(135deg, #1e88e5 0%, #2e1a7d 100%);
-            padding: 1.25rem 1.5rem;
-            border-radius: 18px;
-            color: white;
-            margin-bottom: 1rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-        }
-        .brand-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.2rem;
-        }
-        .brand-subtitle {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-        .section-card {
-            background: white;
-            padding: 1rem 1rem 0.5rem 1rem;
-            border-radius: 16px;
-            box-shadow: 0 8px 18px rgba(0,0,0,0.06);
-            margin-bottom: 1rem;
-        }
-        .stButton > button {
-            border-radius: 12px;
-            font-weight: 600;
-            height: 3rem;
-        }
-        .metric-box {
-            background: white;
-            border-radius: 16px;
-            padding: 1rem;
-            box-shadow: 0 8px 18px rgba(0,0,0,0.06);
-            text-align: center;
-        }
+    .stApp {{
+        background: {BG};
+    }}
+
+    .block-container {{
+        padding-top: 1.2rem;
+        padding-bottom: 1.5rem;
+        max-width: 1400px;
+    }}
+
+    section[data-testid="stSidebar"] {{
+        background: linear-gradient(180deg, {PURPLE} 0%, #1f3fb7 100%);
+        color: white;
+    }}
+
+    section[data-testid="stSidebar"] * {{
+        color: white !important;
+    }}
+
+    .brand-header {{
+        background: linear-gradient(135deg, {PURPLE} 0%, #244db9 55%, {BLUE} 100%);
+        border-radius: 24px;
+        padding: 1.25rem 1.5rem;
+        color: white;
+        box-shadow: 0 12px 30px rgba(25, 35, 90, 0.18);
+        margin-bottom: 1rem;
+    }}
+
+    .brand-title {{
+        font-size: 2.25rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 0.35rem;
+    }}
+
+    .shree {{
+        color: {ORANGE};
+    }}
+
+    .maruthi {{
+        color: white;
+    }}
+
+    .tagline {{
+        font-size: 1.05rem;
+        opacity: 0.95;
+        margin-top: 0.25rem;
+    }}
+
+    .metric-card {{
+        background: {CARD};
+        border: 1px solid {BORDER};
+        border-radius: 22px;
+        padding: 1.1rem 1rem;
+        box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+        text-align: center;
+        min-height: 145px;
+    }}
+
+    .metric-title {{
+        font-size: 1rem;
+        color: {MUTED};
+        font-weight: 600;
+        margin-bottom: 0.65rem;
+    }}
+
+    .metric-value {{
+        font-size: 2.3rem;
+        font-weight: 800;
+        color: {TEXT};
+        margin-bottom: 0.25rem;
+    }}
+
+    .metric-sub {{
+        font-size: 0.9rem;
+        color: {MUTED};
+    }}
+
+    .section-card {{
+        background: {CARD};
+        border: 1px solid {BORDER};
+        border-radius: 22px;
+        padding: 1rem 1rem 0.6rem 1rem;
+        box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+        margin-top: 1rem;
+    }}
+
+    .section-title {{
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: {TEXT};
+        margin-bottom: 0.5rem;
+    }}
+
+    .sidebar-brand {{
+        text-align: center;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }}
+
+    .sidebar-title {{
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-top: 0.5rem;
+    }}
+
+    .sidebar-tagline {{
+        font-size: 0.95rem;
+        opacity: 0.9;
+        margin-top: 0.25rem;
+        margin-bottom: 0.75rem;
+    }}
+
+    .sidebar-box {{
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 18px;
+        padding: 0.85rem;
+        margin-top: 1rem;
+    }}
+
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 10px;
+    }}
+
+    .stTabs [data-baseweb="tab"] {{
+        background: white;
+        border-radius: 12px 12px 0 0;
+        padding: 10px 16px;
+        border: 1px solid {BORDER};
+    }}
+
+    .stTabs [aria-selected="true"] {{
+        color: {ORANGE} !important;
+        border-bottom: 3px solid {ORANGE} !important;
+    }}
+
+    .stButton > button {{
+        border-radius: 14px;
+        font-weight: 700;
+        border: none;
+        height: 3rem;
+        box-shadow: 0 8px 18px rgba(16, 24, 40, 0.08);
+    }}
+
+    .stDownloadButton > button {{
+        border-radius: 14px;
+        font-weight: 700;
+        height: 3rem;
+    }}
+
+    div[data-testid="stDataFrame"] {{
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid {BORDER};
+    }}
+
+    hr {{
+        border-color: rgba(255,255,255,0.12);
+    }}
     </style>
     """, unsafe_allow_html=True)
 
 def brand_header():
-    col1, col2 = st.columns([1, 5])
-    with col1:
+    left, right = st.columns([1, 5])
+    with left:
         if os.path.exists(LOGO_PATH):
             st.image(LOGO_PATH, width=110)
-    with col2:
+    with right:
         st.markdown(f"""
-        <div class="brand-card">
-            <div class="brand-title">{APP_NAME}</div>
-            <div class="brand-subtitle">{TAGLINE}</div>
+        <div class="brand-header">
+            <div class="brand-title">
+                <span class="shree">Shree</span> <span class="maruthi">Maruthi Travels</span>
+            </div>
+            <div class="tagline">{TAGLINE}</div>
         </div>
         """, unsafe_allow_html=True)
+
+def sidebar():
+    with st.sidebar:
+        st.markdown('<div class="sidebar-brand">', unsafe_allow_html=True)
+        if os.path.exists(LOGO_PATH):
+            st.image(LOGO_PATH, width=150)
+        st.markdown(f'''
+            <div class="sidebar-title">
+                <span style="color:{ORANGE};">Shree</span> <span style="color:white;">Maruthi Travels</span>
+            </div>
+            <div class="sidebar-tagline">{TAGLINE}</div>
+        ''', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.write("---")
+
+        if st.session_state.user:
+            st.markdown(f"""
+            <div class="sidebar-box">
+                <div><b>Logged in as:</b> {st.session_state.user['name']}</div>
+                <div style="margin-top:8px;"><b>Role:</b> {st.session_state.user['role']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.write("")
+            if st.button("Logout", use_container_width=True):
+                st.session_state.user = None
+                st.rerun()
 
 def login_page():
     brand_header()
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.subheader("Employee Login")
+    st.markdown('<div class="section-title">Employee Login</div>', unsafe_allow_html=True)
 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
@@ -95,18 +252,14 @@ def login_page():
         else:
             st.error("Invalid username or password")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def employee_dashboard():
     user = st.session_state.user
     brand_header()
 
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.subheader(f"Welcome, {user['name']}")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
+    c1, c2 = st.columns(2)
+    with c1:
         if st.button("Check In", use_container_width=True):
             msg = mark_checkin(user["id"], user["name"])
             if msg == "Checked in":
@@ -114,7 +267,7 @@ def employee_dashboard():
             else:
                 st.warning(msg)
 
-    with col2:
+    with c2:
         if st.button("Check Out", use_container_width=True):
             msg = mark_checkout(user["id"])
             if msg == "Checked out":
@@ -122,10 +275,8 @@ def employee_dashboard():
             else:
                 st.warning(msg)
 
-    st.markdown('</div>', unsafe_allow_html=True)
-
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.subheader("My Attendance")
+    st.markdown('<div class="section-title">My Attendance</div>', unsafe_allow_html=True)
 
     df = get_attendance()
     if not df.empty:
@@ -142,7 +293,8 @@ def employee_dashboard():
         )
     else:
         st.info("No attendance records yet.")
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def admin_dashboard():
     user = st.session_state.user
@@ -163,15 +315,32 @@ def admin_dashboard():
 
     m1, m2, m3 = st.columns(3)
     with m1:
-        st.markdown(f'<div class="metric-box"><h4>Total Employees</h4><h2>{total_employees}</h2></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-title">Total Employees</div>
+            <div class="metric-value" style="color:{PURPLE};">{total_employees}</div>
+            <div class="metric-sub">Registered staff</div>
+        </div>
+        """, unsafe_allow_html=True)
     with m2:
-        st.markdown(f'<div class="metric-box"><h4>Present Today</h4><h2>{total_present_today}</h2></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-title">Present Today</div>
+            <div class="metric-value" style="color:{BLUE};">{total_present_today}</div>
+            <div class="metric-sub">Checked in today</div>
+        </div>
+        """, unsafe_allow_html=True)
     with m3:
-        st.markdown(f'<div class="metric-box"><h4>Checked Out</h4><h2>{total_checked_out}</h2></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-title">Checked Out</div>
+            <div class="metric-value" style="color:{ORANGE};">{total_checked_out}</div>
+            <div class="metric-sub">Completed checkout</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.write("")
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.subheader(f"Admin Dashboard - {user['name']}")
+    st.markdown(f'<div class="section-title">Admin Dashboard - {user["name"]}</div>', unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Today's Attendance", "All Employees", "Monthly Report"])
 
@@ -211,26 +380,9 @@ def admin_dashboard():
         else:
             st.info("No attendance records yet.")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-def sidebar():
-    with st.sidebar:
-        if os.path.exists(LOGO_PATH):
-            st.image(LOGO_PATH, width=160)
-
-        st.markdown(f"### {APP_NAME}")
-        st.caption(TAGLINE)
-        st.write("---")
-
-        if st.session_state.user:
-            st.write(f"**Logged in as:** {st.session_state.user['name']}")
-            st.write(f"**Role:** {st.session_state.user['role']}")
-
-            if st.button("Logout", use_container_width=True):
-                st.session_state.user = None
-                st.rerun()
-
-load_branding()
+inject_css()
 
 if st.session_state.user is None:
     login_page()
