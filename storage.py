@@ -87,22 +87,22 @@ def mark_checkin(emp_id, name, location=None, remarks=""):
     next_id = len(df) + 1 if not df.empty else 1
 
     ws.append_row([
-        next_id,         # id
-        emp_id,          # employee_id
-        name,            # name
-        today,           # date
-        "Present",       # status
-        now_time,        # check_in
-        "",              # check_out
-        remarks,         # remarks
-        lat,             # checkin_lat
-        lng,             # checkin_lng
-        acc,             # checkin_accuracy
-        map_url,         # checkin_map
-        "",              # checkout_lat
-        "",              # checkout_lng
-        "",              # checkout_accuracy
-        ""               # checkout_map
+        next_id,
+        emp_id,
+        name,
+        today,
+        "Present",
+        now_time,
+        "",
+        remarks,
+        lat,
+        lng,
+        acc,
+        map_url,
+        "",
+        "",
+        "",
+        ""
     ])
 
     clear_cached_data()
@@ -125,16 +125,22 @@ def mark_absent(emp_id, name, remarks=""):
     next_id = len(df) + 1 if not df.empty else 1
 
     ws.append_row([
-        next_id,         # id
-        emp_id,          # employee_id
-        name,            # name
-        today,           # date
-        "Absent",        # status
-        "",              # check_in
-        "",              # check_out
-        remarks,         # remarks
-        "", "", "", "",  # checkin location fields
-        "", "", "", ""   # checkout location fields
+        next_id,
+        emp_id,
+        name,
+        today,
+        "Absent",
+        "",
+        "",
+        remarks,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
     ])
 
     clear_cached_data()
@@ -171,8 +177,7 @@ def mark_checkout(emp_id, location=None):
         lat = location.get("latitude", "") or ""
         lng = location.get("longitude", "") or ""
         acc = location.get("accuracy", "") or ""
-        if str(lat).strip() and str(lng).strip():
-            map_url = f"https://maps.google.com/?q={lat},{lng}"
+        map_url = _map_url(lat, lng)
 
     col = {name: idx + 1 for idx, name in enumerate(headers)}
 

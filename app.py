@@ -219,7 +219,7 @@ def location_block():
             f"Lat: {loc.get('latitude')}, Lng: {loc.get('longitude')}, Accuracy: {loc.get('accuracy')}"
         )
     else:
-        st.info("Tap the location button and allow GPS access before check-in.")
+        st.info("Tap the location button and allow GPS access once.")
 
     return st.session_state.get("latest_location")
 
@@ -250,19 +250,25 @@ def employee_dashboard():
 
     with c1:
         if st.button("Check In", use_container_width=True):
-            msg = mark_checkin(user_id, user_name, location=loc, remarks=remarks)
-            if msg == "Checked in":
-                st.success(msg)
+            if not loc:
+                st.warning("Location not available yet. Allow location and try again.")
             else:
-                st.warning(msg)
+                msg = mark_checkin(user_id, user_name, location=loc, remarks=remarks)
+                if msg == "Checked in":
+                    st.success(msg)
+                else:
+                    st.warning(msg)
 
     with c2:
         if st.button("Check Out", use_container_width=True):
-            msg = mark_checkout(user_id, location=loc)
-            if msg == "Checked out":
-                st.success(msg)
+            if not loc:
+                st.warning("Location not available yet. Allow location and try again.")
             else:
-                st.warning(msg)
+                msg = mark_checkout(user_id, location=loc)
+                if msg == "Checked out":
+                    st.success(msg)
+                else:
+                    st.warning(msg)
 
     with c3:
         if st.button("Mark Absent", use_container_width=True):
