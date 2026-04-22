@@ -144,11 +144,20 @@ def mark_checkout(emp_id, location=None):
     ws = sheet("attendance")
     records = ws.get_all_values()
 
-    if len(records) < 2:
+    if not records or len(records) < 2:
         return "Check-in first"
 
     headers = [str(h).strip().lower() for h in records[0]]
     data_rows = records[1:]
+
+    required_cols = [
+        "employee_id", "date", "status", "check_out",
+        "checkout_lat", "checkout_lng", "checkout_accuracy", "checkout_map"
+    ]
+
+    for col_name in required_cols:
+        if col_name not in headers:
+            return f"Missing column in attendance sheet: {col_name}"
 
     today = pd.Timestamp.now().strftime("%Y-%m-%d")
     now_time = pd.Timestamp.now().strftime("%H:%M:%S")
@@ -162,12 +171,15 @@ def mark_checkout(emp_id, location=None):
         lat = location.get("latitude", "") or ""
         lng = location.get("longitude", "") or ""
         acc = location.get("accuracy", "") or ""
-        map_url = _map_url(lat, lng)
+        if str(lat).strip() and str(lng).strip():
+            map_url = f"https://maps.google.com/?q={lat},{lng}"
 
     col = {name: idx + 1 for idx, name in enumerate(headers)}
 
     for i, row in enumerate(data_rows, start=2):
-        row = list(row) + [""] * (len(headers) - len(row))
+        row = list(row)
+        if len(row) < len(headers):
+            row += [""] * (len(headers) - len(row))
 
         row_emp_id = str(row[col["employee_id"] - 1]).strip()
         row_date = str(row[col["date"] - 1]).strip()
