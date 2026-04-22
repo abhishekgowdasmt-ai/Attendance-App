@@ -1,6 +1,8 @@
 import os
 import streamlit as st
 import pandas as pd
+from streamlit_geolocation import streamlit_geolocation
+
 from auth import authenticate
 from storage import get_employees, get_attendance, mark_checkin, mark_checkout
 
@@ -32,22 +34,18 @@ def inject_css():
     .stApp {{
         background: {BG};
     }}
-
     .block-container {{
-        padding-top: 1.2rem;
+        padding-top: 1rem;
         padding-bottom: 1.5rem;
         max-width: 1400px;
     }}
-
     section[data-testid="stSidebar"] {{
         background: linear-gradient(180deg, {PURPLE} 0%, #1f3fb7 100%);
         color: white;
     }}
-
     section[data-testid="stSidebar"] * {{
         color: white !important;
     }}
-
     .brand-header {{
         background: linear-gradient(135deg, {PURPLE} 0%, #244db9 55%, {BLUE} 100%);
         border-radius: 24px;
@@ -56,28 +54,16 @@ def inject_css():
         box-shadow: 0 12px 30px rgba(25, 35, 90, 0.18);
         margin-bottom: 1rem;
     }}
-
     .brand-title {{
-        font-size: 2.25rem;
+        font-size: 2.2rem;
         font-weight: 800;
         line-height: 1.1;
         margin-bottom: 0.35rem;
     }}
-
-    .shree {{
-        color: {ORANGE};
-    }}
-
-    .maruthi {{
-        color: white;
-    }}
-
     .tagline {{
-        font-size: 1.05rem;
+        font-size: 1rem;
         opacity: 0.95;
-        margin-top: 0.25rem;
     }}
-
     .metric-card {{
         background: {CARD};
         border: 1px solid {BORDER};
@@ -85,28 +71,19 @@ def inject_css():
         padding: 1.1rem 1rem;
         box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
         text-align: center;
-        min-height: 145px;
+        min-height: 140px;
     }}
-
     .metric-title {{
         font-size: 1rem;
         color: {MUTED};
         font-weight: 600;
         margin-bottom: 0.65rem;
     }}
-
     .metric-value {{
-        font-size: 2.3rem;
+        font-size: 2.25rem;
         font-weight: 800;
         color: {TEXT};
-        margin-bottom: 0.25rem;
     }}
-
-    .metric-sub {{
-        font-size: 0.9rem;
-        color: {MUTED};
-    }}
-
     .section-card {{
         background: {CARD};
         border: 1px solid {BORDER};
@@ -115,81 +92,45 @@ def inject_css():
         box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
         margin-top: 1rem;
     }}
-
     .section-title {{
-        font-size: 1.65rem;
+        font-size: 1.55rem;
         font-weight: 800;
         color: {TEXT};
         margin-bottom: 0.5rem;
     }}
-
-    .sidebar-brand {{
-        text-align: center;
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-    }}
-
-    .sidebar-title {{
-        font-size: 1.6rem;
-        font-weight: 800;
-        line-height: 1.2;
-        margin-top: 0.5rem;
-    }}
-
-    .sidebar-tagline {{
-        font-size: 0.95rem;
-        opacity: 0.9;
-        margin-top: 0.25rem;
-        margin-bottom: 0.75rem;
-    }}
-
-    .sidebar-box {{
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 18px;
-        padding: 0.85rem;
-        margin-top: 1rem;
-    }}
-
     .stTabs [data-baseweb="tab-list"] {{
         gap: 10px;
     }}
-
     .stTabs [data-baseweb="tab"] {{
         background: white;
         border-radius: 12px 12px 0 0;
         padding: 10px 16px;
         border: 1px solid {BORDER};
     }}
-
     .stTabs [aria-selected="true"] {{
         color: {ORANGE} !important;
         border-bottom: 3px solid {ORANGE} !important;
     }}
-
     .stButton > button {{
         border-radius: 14px;
         font-weight: 700;
         border: none;
-        height: 3rem;
+        height: 3.1rem;
         box-shadow: 0 8px 18px rgba(16, 24, 40, 0.08);
     }}
-
     .stDownloadButton > button {{
         border-radius: 14px;
         font-weight: 700;
         height: 3rem;
     }}
-
     div[data-testid="stDataFrame"] {{
         border-radius: 16px;
         overflow: hidden;
         border: 1px solid {BORDER};
     }}
-
-    hr {{
-        border-color: rgba(255,255,255,0.12);
-    }}
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    header {{visibility: hidden;}}
     </style>
     """, unsafe_allow_html=True)
 
@@ -202,7 +143,8 @@ def brand_header():
         st.markdown(f"""
         <div class="brand-header">
             <div class="brand-title">
-                <span class="shree">Shree</span> <span class="maruthi">Maruthi Travels</span>
+                <span style="color:{ORANGE};">Shree</span>
+                <span style="color:white;"> Maruthi Travels</span>
             </div>
             <div class="tagline">{TAGLINE}</div>
         </div>
@@ -210,24 +152,26 @@ def brand_header():
 
 def sidebar():
     with st.sidebar:
-        st.markdown('<div class="sidebar-brand">', unsafe_allow_html=True)
         if os.path.exists(LOGO_PATH):
-            st.image(LOGO_PATH, width=150)
-        st.markdown(f'''
-            <div class="sidebar-title">
-                <span style="color:{ORANGE};">Shree</span> <span style="color:white;">Maruthi Travels</span>
-            </div>
-            <div class="sidebar-tagline">{TAGLINE}</div>
-        ''', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.image(LOGO_PATH, width=155)
+
+        st.markdown(f"""
+        <div style="font-size:1.55rem;font-weight:800;line-height:1.2;margin-top:0.4rem;">
+            <span style="color:{ORANGE};">Shree</span>
+            <span style="color:white;"> Maruthi Travels</span>
+        </div>
+        <div style="font-size:0.95rem;opacity:0.92;margin-top:0.25rem;">
+            {TAGLINE}
+        </div>
+        """, unsafe_allow_html=True)
 
         st.write("---")
 
         if st.session_state.user:
             st.markdown(f"""
-            <div class="sidebar-box">
+            <div style="background:rgba(255,255,255,0.08);padding:0.9rem;border-radius:18px;border:1px solid rgba(255,255,255,0.12);">
                 <div><b>Logged in as:</b> {st.session_state.user['name']}</div>
-                <div style="margin-top:8px;"><b>Role:</b> {st.session_state.user['role']}</div>
+                <div style="margin-top:6px;"><b>Role:</b> {st.session_state.user['role']}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -254,14 +198,33 @@ def login_page():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+def location_block():
+    st.markdown("#### Capture Location")
+    loc = streamlit_geolocation()
+    if loc and loc.get("latitude") is not None:
+        st.success("Location captured")
+        st.caption(
+            f"Lat: {loc.get('latitude')}, Lng: {loc.get('longitude')}, Accuracy: {loc.get('accuracy')}"
+        )
+    else:
+        st.info("Tap the location button and allow GPS access before check-in.")
+    return loc
+
 def employee_dashboard():
     user = st.session_state.user
     brand_header()
 
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">Welcome, {user["name"]}</div>', unsafe_allow_html=True)
+
+    remarks = st.text_input("Remarks (optional)", placeholder="Any note for today")
+    loc = location_block()
+
     c1, c2 = st.columns(2)
+
     with c1:
         if st.button("Check In", use_container_width=True):
-            msg = mark_checkin(user["id"], user["name"])
+            msg = mark_checkin(user["id"], user["name"], location=loc, remarks=remarks)
             if msg == "Checked in":
                 st.success(msg)
             else:
@@ -269,11 +232,13 @@ def employee_dashboard():
 
     with c2:
         if st.button("Check Out", use_container_width=True):
-            msg = mark_checkout(user["id"])
+            msg = mark_checkout(user["id"], location=loc)
             if msg == "Checked out":
                 st.success(msg)
             else:
                 st.warning(msg)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">My Attendance</div>', unsafe_allow_html=True)
@@ -315,29 +280,11 @@ def admin_dashboard():
 
     m1, m2, m3 = st.columns(3)
     with m1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-title">Total Employees</div>
-            <div class="metric-value" style="color:{PURPLE};">{total_employees}</div>
-            <div class="metric-sub">Registered staff</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div class="metric-title">Total Employees</div><div class="metric-value" style="color:{PURPLE};">{total_employees}</div></div>', unsafe_allow_html=True)
     with m2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-title">Present Today</div>
-            <div class="metric-value" style="color:{BLUE};">{total_present_today}</div>
-            <div class="metric-sub">Checked in today</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div class="metric-title">Present Today</div><div class="metric-value" style="color:{BLUE};">{total_present_today}</div></div>', unsafe_allow_html=True)
     with m3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-title">Checked Out</div>
-            <div class="metric-value" style="color:{ORANGE};">{total_checked_out}</div>
-            <div class="metric-sub">Completed checkout</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div class="metric-title">Checked Out</div><div class="metric-value" style="color:{ORANGE};">{total_checked_out}</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown(f'<div class="section-title">Admin Dashboard - {user["name"]}</div>', unsafe_allow_html=True)
@@ -347,13 +294,6 @@ def admin_dashboard():
     with tab1:
         if not today_df.empty:
             st.dataframe(today_df, use_container_width=True, hide_index=True)
-            csv = today_df.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "Download Today's Attendance CSV",
-                data=csv,
-                file_name=f"attendance_{today}.csv",
-                mime="text/csv"
-            )
         else:
             st.info("No attendance records yet.")
 
