@@ -26,20 +26,11 @@ st.set_page_config(
 )
 
 if "user" not in st.session_state:
-    st.session_state.user = None
+    st.session_state["user"] = None
 
-def location_block():
-    st.markdown("#### Current Location")
-    loc = streamlit_geolocation()
-    if loc and loc.get("latitude") is not None:
-        st.session_state["latest_location"] = loc
-        st.success("Location ready")
-        st.caption(
-            f"Lat: {loc.get('latitude')}, Lng: {loc.get('longitude')}, Accuracy: {loc.get('accuracy')}"
-        )
-    else:
-        st.info("Allow location access once. Then Check In / Check Out will save it.")
-    return st.session_state.get("latest_location")
+if "latest_location" not in st.session_state:
+    st.session_state["latest_location"] = None
+
 
 def inject_css():
     st.markdown(f"""
@@ -147,6 +138,7 @@ def inject_css():
     </style>
     """, unsafe_allow_html=True)
 
+
 def brand_header():
     left, right = st.columns([1, 5])
     with left:
@@ -162,6 +154,7 @@ def brand_header():
             <div class="tagline">{TAGLINE}</div>
         </div>
         """, unsafe_allow_html=True)
+
 
 def sidebar():
     with st.sidebar:
@@ -180,18 +173,21 @@ def sidebar():
 
         st.write("---")
 
-        if st.session_state.user:
+        current_user = st.session_state.get("user")
+        if current_user:
             st.markdown(f"""
             <div style="background:rgba(255,255,255,0.08);padding:0.9rem;border-radius:18px;border:1px solid rgba(255,255,255,0.12);">
-                <div><b>Logged in as:</b> {st.session_state.user['name']}</div>
-                <div style="margin-top:6px;"><b>Role:</b> {st.session_state.user['role']}</div>
+                <div><b>Logged in as:</b> {current_user.get('name', '')}</div>
+                <div style="margin-top:6px;"><b>Role:</b> {current_user.get('role', '')}</div>
             </div>
             """, unsafe_allow_html=True)
 
             st.write("")
             if st.button("Logout", use_container_width=True):
-                st.session_state.user = None
+                st.session_state["user"] = None
+                st.session_state["latest_location"] = None
                 st.rerun()
+
 
 def login_page():
     brand_header()
@@ -204,24 +200,29 @@ def login_page():
     if st.button("Login", use_container_width=True):
         user = authenticate(username, password)
         if user:
-            st.session_state.user = user
+            st.session_state["user"] = dict(user)
             st.rerun()
         else:
             st.error("Invalid username or password")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+
 def location_block():
     st.markdown("#### Capture Location")
     loc = streamlit_geolocation()
+
     if loc and loc.get("latitude") is not None:
+        st.session_state["latest_location"] = loc
         st.success("Location captured")
         st.caption(
             f"Lat: {loc.get('latitude')}, Lng: {loc.get('longitude')}, Accuracy: {loc.get('accuracy')}"
         )
     else:
         st.info("Tap the location button and allow GPS access before check-in.")
-    return loc
+
+    return st.session_state.get("latest_location")
+
 
 def employee_dashboard():
     current_user = st.session_state.get("user")
@@ -294,15 +295,20 @@ def employee_dashboard():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+
 def admin_dashboard():
-    user = st.session_state.user
+    current_user = st.session_state.get("user")
+    if not current_user:
+        st.error("Please login again")
+        st.stop()
+
     brand_header()
 
     df = get_attendance()
     emp_df = get_employees()
 
     today = pd.Timestamp.now().strftime("%Y-%m-%d")
-    today_df = df[df["date"].astype(str) == today] if not df.empty else pd.DataFrame()
+    today_df = df[df["date"].astype(str).str.strip() == today] if not df.empty else pd.DataFrame()
 
     total_employees = len(emp_df) if not emp_df.empty else 0
     total_present_today = len(today_df) if not today_df.empty else 0
@@ -320,7 +326,7 @@ def admin_dashboard():
         st.markdown(f'<div class="metric-card"><div class="metric-title">Checked Out</div><div class="metric-value" style="color:{ORANGE};">{total_checked_out}</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="section-title">Admin Dashboard - {user["name"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">Admin Dashboard - {current_user.get("name", "")}</div>', unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Today's Attendance", "All Employees", "Monthly Report"])
 
@@ -355,13 +361,15 @@ def admin_dashboard():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+
 inject_css()
 
-if st.session_state.user is None:
+current_user = st.session_state.get("user")
+if current_user is None:
     login_page()
 else:
     sidebar()
-    role = str(st.session_state.user["role"]).strip().lower()
+    role = str(current_user.get("role", "")).strip().lower()
     if role == "admin":
         admin_dashboard()
     else:
